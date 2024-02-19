@@ -17,7 +17,7 @@ from .tools.translations import t
 from .tools.common import wrap_dynamic_enum_items
 
 no_ver_check = False
-fake_update = False
+fake_update = True
 
 is_checking_for_update = False
 checked_on_startup = False
@@ -50,8 +50,6 @@ for mod in addon_utils.modules():
 
 # Icons for UI
 ICON_URL = 'URL'
-if bpy.app.version < (2, 79, 9):
-    ICON_URL = 'LOAD_FACTORY'
 
 
 class CheckForUpdateButton(bpy.types.Operator):
@@ -382,7 +380,7 @@ def check_for_update():
     print('Checking for Cats update...')
 
     # Get all releases from Github
-    if not get_github_releases('Darkblader24') and not get_github_releases('GiveMeAllYourCats'):
+    if not get_github_releases('jasonw4331'):
         finish_update_checking(error=t('check_for_update.cantCheck'))
         return
 
@@ -529,7 +527,7 @@ def update_now(version=None, latest=False, dev=False):
         return
     if dev:
         print('UPDATE TO DEVELOPMENT')
-        update_link = 'https://github.com/michaeldegroot/cats-blender-plugin/archive/development.zip'
+        update_link = 'https://github.com/jasonw4331/cats-blender-plugin/archive/blender-4.0.zip'
     elif latest or not version:
         print('UPDATE TO ' + latest_version_str)
         update_link = version_list.get(latest_version_str)[0]
@@ -755,8 +753,6 @@ def get_user_preferences():
 
 
 def layout_split(layout, factor=0.0, align=False):
-    if bpy.app.version < (2, 79, 9):
-        return layout.split(percentage=factor, align=align)
     return layout.split(factor=factor, align=align)
 
 

@@ -13,7 +13,6 @@ from ..tools import material as Material
 from ..tools import bonemerge as Bonemerge
 from ..tools import rootbone as Rootbone
 
-from ..tools.common import version_2_79_or_older
 from ..tools.register import register_wrap
 from ..tools.translations import t
 
@@ -200,7 +199,7 @@ class OptimizePanel(ToolPanel, bpy.types.Panel):
                 row.label(text=t('OptimizePanel.matCombOutdated3'))
                 row = col.row(align=True)
                 row.scale_y = 0.75
-                row.label(text=t('OptimizePanel.matCombOutdated4', location=t('OptimizePanel.matCombOutdated5_2.8') if version_2_79_or_older() else t('OptimizePanel.matCombOutdated5_2.79')))
+                row.label(text=t('OptimizePanel.matCombOutdated4', location=t('OptimizePanel.matCombOutdated5')))
 
                 col.separator()
                 row = col.row(align=True)
@@ -274,19 +273,6 @@ class OptimizePanel(ToolPanel, bpy.types.Panel):
             row = col.row(align=True)
             row.scale_y = 1.1
             row.operator(Material.CombineMaterialsButton.bl_idname, icon='MATERIAL')
-
-            if version_2_79_or_older():
-                row = col.row(align=True)
-                row.scale_y = 1.1
-                row.operator(Material.OneTexPerMatButton.bl_idname, icon='TEXTURE')
-                subcol = row.row(align=True)
-                subcol.alignment = 'RIGHT'
-                subcol.scale_y = 1.1
-                subcol.operator(Material.OneTexPerMatOnlyButton.bl_idname, text="", icon='X')
-
-                row = col.row(align=True)
-                row.scale_y = 1.1
-                row.operator(Material.StandardizeTextures.bl_idname, icon=globs.ICON_SHADING_TEXTURE)
 
             col.separator()
             row = col.row(align=True)

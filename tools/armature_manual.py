@@ -7,7 +7,6 @@ import numpy as np
 
 from . import common as Common
 from . import eyetracking as Eyetracking
-from .common import version_2_79_or_older
 from .register import register_wrap
 from .translations import t
 
@@ -143,13 +142,6 @@ def start_pose_mode(reset_pose=True):
             bpy.context.selected_editable_bones) > 0:
         current = bpy.context.selected_editable_bones[0].name
 
-    if version_2_79_or_older():
-        bpy.context.space_data.use_pivot_point_align = False
-        bpy.context.space_data.show_manipulator = True
-    else:
-        pass
-        # TODO
-
     armature = Common.set_default_stage()
     Common.switch('POSE')
     armature.data.pose_position = 'POSE'
@@ -177,10 +169,7 @@ def start_pose_mode(reset_pose=True):
             if index != 0:
                 pb.select = False
 
-    if version_2_79_or_older():
-        bpy.context.space_data.transform_manipulators = {'ROTATE'}
-    else:
-        bpy.ops.wm.tool_set_by_id(name="builtin.rotate")
+    bpy.ops.wm.tool_set_by_id(name="builtin.rotate")
 
     saved_data.load(hide_only=True)
     Common.hide(armature, False)
@@ -250,10 +239,7 @@ def stop_pose_mode(reset_pose=True):
             for shape_key in mesh.data.shape_keys.key_blocks:
                 shape_key.value = 0
 
-    if version_2_79_or_older():
-        bpy.context.space_data.transform_manipulators = {'TRANSLATE'}
-    else:
-        bpy.ops.wm.tool_set_by_id(name="builtin.select_box")
+    bpy.ops.wm.tool_set_by_id(name="builtin.select_box")
 
     Eyetracking.eye_left = None
 
@@ -409,15 +395,8 @@ class PoseToRest(bpy.types.Operator):
         context_override = {'object': mesh_obj}
         # Moving the modifier to the first index will prevent an Info message about the applied modifier not being
         # first and potentially having unexpected results.
-        if bpy.app.version >= (2, 90, 0):
-            # modifier_move_to_index was added in Blender 2.90
-            Common.op_override(bpy.ops.object.modifier_move_to_index, context_override, modifier=mod_name, index=0)
-        else:
-            # The newly created modifier will be at the bottom of the list
-            armature_mod_index = len(mesh_obj.modifiers) - 1
-            # Move the modifier up until it's at the top of the list
-            for _ in range(armature_mod_index):
-                Common.op_override(bpy.ops.object.modifier_move_up, context_override, modifier=mod_name)
+        # modifier_move_to_index was added in Blender 2.90
+        Common.op_override(bpy.ops.object.modifier_move_to_index, context_override, modifier=mod_name, index=0)
         Common.op_override(bpy.ops.object.modifier_apply, context_override, modifier=mod_name)
 
     @staticmethod
@@ -460,35 +439,24 @@ class PoseToRest(bpy.types.Operator):
         # We can re-use the same array over and over
         eval_verts_cos_array = np.empty(co_length, dtype=np.single)
 
-        if Common.version_2_79_or_older():
-            def get_eval_cos_array():
-                # Create a new mesh with modifiers and shape keys applied
-                evaluated_mesh = mesh_obj.to_mesh(scene, True, 'PREVIEW')
+        # depsgraph lets us evaluate objects and get their state after the effect of modifiers and shape keys
+        depsgraph = None
+        evaluated_mesh_obj = None
 
-                # Get the cos of the vertices from the evaluated mesh
-                evaluated_mesh.vertices.foreach_get('co', eval_verts_cos_array)
-                # Delete the newly created mesh
-                bpy.data.meshes.remove(evaluated_mesh)
-                return eval_verts_cos_array
-        else:
-            # depsgraph lets us evaluate objects and get their state after the effect of modifiers and shape keys
-            depsgraph = None
-            evaluated_mesh_obj = None
-
-            def get_eval_cos_array():
-                nonlocal depsgraph
-                nonlocal evaluated_mesh_obj
-                # Get the depsgraph and evaluate the mesh if we haven't done so already
-                if depsgraph is None or evaluated_mesh_obj is None:
-                    depsgraph = bpy.context.evaluated_depsgraph_get()
-                    evaluated_mesh_obj = mesh_obj.evaluated_get(depsgraph)
-                else:
-                    # If we already have the depsgraph and evaluated mesh, in order for the change to the active shape
-                    # key to take effect, the depsgraph has to be updated
-                    depsgraph.update()
-                # Get the cos of the vertices from the evaluated mesh
-                evaluated_mesh_obj.data.vertices.foreach_get('co', eval_verts_cos_array)
-                return eval_verts_cos_array
+        def get_eval_cos_array():
+            nonlocal depsgraph
+            nonlocal evaluated_mesh_obj
+            # Get the depsgraph and evaluate the mesh if we haven't done so already
+            if depsgraph is None or evaluated_mesh_obj is None:
+                depsgraph = bpy.context.evaluated_depsgraph_get()
+                evaluated_mesh_obj = mesh_obj.evaluated_get(depsgraph)
+            else:
+                # If we already have the depsgraph and evaluated mesh, in order for the change to the active shape
+                # key to take effect, the depsgraph has to be updated
+                depsgraph.update()
+            # Get the cos of the vertices from the evaluated mesh
+            evaluated_mesh_obj.data.vertices.foreach_get('co', eval_verts_cos_array)
+            return eval_verts_cos_array
 
         for i, shape_key in enumerate(key_blocks):
             # As shape key pinning is enabled, when we change the active shape key, it will change the state of the mesh

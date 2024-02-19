@@ -6,10 +6,10 @@ bl_info = {
     'author': 'GiveMeAllYourCats & Hotox',
     'location': 'View 3D > Tool Shelf > CATS',
     'description': 'A tool designed to shorten steps needed to import and optimize models into VRChat',
-    'version': (0, 19, 0),  # Has to be (x, x, x) not [x, x, x]!! Only change this version and the dev branch var right before publishing the new update!
-    'blender': (2, 80, 0),
+    'version': (1, 0, 0),  # Has to be (x, x, x) not [x, x, x]!! Only change this version and the dev branch var right before publishing the new update!
+    'blender': (4, 0, 0),
     'wiki_url': 'https://github.com/michaeldegroot/cats-blender-plugin',
-    'tracker_url': 'https://github.com/michaeldegroot/cats-blender-plugin/issues',
+    'tracker_url': 'https://github.com/jasonw4331/cats-blender-plugin/issues',
     'warning': '',
 }
 dev_branch = True
@@ -187,17 +187,11 @@ def remove_corrupted_files():
 
 
 def check_unsupported_blender_versions():
-    # Don't allow Blender versions older than 2.79
-    if bpy.app.version < (2, 79):
+    # Don't allow Blender versions older than 4.0
+    if bpy.app.version < (4, 0):
         unregister()
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.unsupportedVersion'))
-
-    # Versions 2.80.0 to 2.80.74 are beta versions, stable is 2.80.75
-    if (2, 80, 0) <= bpy.app.version < (2, 80, 75):
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.beta2.80'))
 
 
 def set_cats_version_string():
@@ -254,17 +248,17 @@ def register():
         raise ImportError(t('Main.error.restartAndEnable_alt'))
 
     # if not tools.settings.use_custom_mmd_tools():
-    #     bpy.utils.unregister_module("mmd_tools")
+    #     bpy.utils.unregister_module("mmd_tools_local")
 
-    # Load mmd_tools
+    # Load mmd_tools_local
     try:
         mmd_tools_local.register()
     except NameError:
-        print('Could not register local mmd_tools')
+        print('Could not register local mmd_tools_local')
     except AttributeError:
-        print('Could not register local mmd_tools')
+        print('Could not register local mmd_tools_local')
     except ValueError:
-        print('mmd_tools is already registered')
+        print('mmd_tools_local is already registered')
 
     # Register immersive scaler if it's loaded
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
@@ -317,9 +311,6 @@ def register():
     # Disable request warning when using google translate
     requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-    # Monkey patch fbx exporter to include empty shapekeys
-    tools.fbx_patch.start_patch_fbx_exporter_timer()
-
     # Apply the settings after a short time, because you can't change checkboxes during register process
     tools.settings.start_apply_settings_timer()
 
@@ -332,21 +323,21 @@ def unregister():
     # Unregister updater
     updater.unregister()
 
-    # Register unloaded mmd_tools tabs if they are hidden to avoid issues when unloading mmd_tools
+    # Register unloaded mmd_tools_local tabs if they are hidden to avoid issues when unloading mmd_tools_local
     if not bpy.context.scene.show_mmd_tabs:
         tools.common.toggle_mmd_tabs(shutdown_plugin=True)
 
-    # Unload mmd_tools
+    # Unload mmd_tools_local
     try:
         mmd_tools_local.unregister()
     except NameError:
-        print('mmd_tools was not registered')
+        print('mmd_tools_local was not registered')
         pass
     except AttributeError:
-        print('Could not unregister local mmd_tools')
+        print('Could not unregister local mmd_tools_local')
         pass
     except ValueError:
-        print('mmd_tools was not registered')
+        print('mmd_tools_local was not registered')
         pass
 
     # Unload immersive scaler

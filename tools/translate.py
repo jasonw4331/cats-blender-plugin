@@ -39,10 +39,6 @@ class TranslateShapekeyButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        if bpy.app.version < (2, 79, 0):
-            self.report({'ERROR'}, t('TranslateX.error.wrongVersion'))
-            return {'FINISHED'}
-
         saved_data = Common.SavedData()
 
         to_translate = []
@@ -113,9 +109,6 @@ class TranslateObjectsButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        if bpy.app.version < (2, 79, 0):
-            self.report({'ERROR'}, t('TranslateX.error.wrongVersion'))
-            return {'FINISHED'}
         to_translate = []
         for obj in Common.get_objects():
             if obj.name not in to_translate:
@@ -157,10 +150,6 @@ class TranslateMaterialsButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        if bpy.app.version < (2, 79, 0):
-            self.report({'ERROR'}, t('TranslateX.error.wrongVersion'))
-            return {'FINISHED'}
-
         saved_data = Common.SavedData()
 
         to_translate = []
@@ -242,10 +231,6 @@ class TranslateAllButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        if bpy.app.version < (2, 79, 0):
-            self.report({'ERROR'}, t('TranslateX.error.wrongVersion'))
-            return {'FINISHED'}
-
         error_shown = False
 
         try:

@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
-import struct
-import os
+# Copyright 2014 MMD Tools authors
+# This file is part of MMD Tools.
+
 import logging
+import os
+import struct
+
 
 class InvalidFileError(Exception):
     pass
@@ -1589,10 +1593,10 @@ class Joint:
 def load(path):
     with FileReadStream(path) as fs:
         logging.info('****************************************')
-        logging.info(' mmd_tools.pmx module')
+        logging.info(' mmd_tools_local.pmx module')
         logging.info('----------------------------------------')
         logging.info(' Start to load model data form a pmx file')
-        logging.info('            by the mmd_tools.pmx modlue.')
+        logging.info('            by the mmd_tools_local.pmx module.')
         logging.info('')
         header = Header()
         header.load(fs)
@@ -1605,7 +1609,7 @@ def load(path):
             #raise
         logging.info(' Finished loading.')
         logging.info('----------------------------------------')
-        logging.info(' mmd_tools.pmx module')
+        logging.info(' mmd_tools_local.pmx module')
         logging.info('****************************************')
         return model
 

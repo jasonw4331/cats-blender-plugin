@@ -26,7 +26,6 @@ from sys import intern
 from mmd_tools_local import utils
 from mmd_tools_local.panels import tool as mmd_tool
 from mmd_tools_local.panels import util_tools as mmd_util_tools
-from mmd_tools_local.panels import view_prop as mmd_view_prop
 
 # TODO:
 #  - Add check if hips bone really needs to be rotated
@@ -35,19 +34,8 @@ from mmd_tools_local.panels import view_prop as mmd_view_prop
 #  - Checkbox for eye blinking/moving
 #  - Translate progress bar
 
-
-def version_2_79_or_older():
-    return bpy.app.version < (2, 80)
-
-def version_2_93_or_older():
-    return bpy.app.version < (2, 90)
-
-
-version_3_6_or_older = bpy.app.version < (4, 0)
-
-
 def get_objects():
-    return bpy.context.scene.objects if version_2_79_or_older() else bpy.context.view_layer.objects
+    return bpy.context.view_layer.objects
 
 
 class SavedData:
@@ -152,8 +140,7 @@ def unhide_all():
         hide(obj, False)
         set_unselectable(obj, False)
 
-    if not version_2_79_or_older():
-        unhide_all_unnecessary()
+    unhide_all_unnecessary()
 
 
 def unhide_children(parent):
@@ -181,43 +168,28 @@ def unselect_all():
 def set_active(obj, skip_sel=False):
     if not skip_sel:
         select(obj)
-    if version_2_79_or_older():
-        bpy.context.scene.objects.active = obj
-    else:
-        bpy.context.view_layer.objects.active = obj
+    bpy.context.view_layer.objects.active = obj
 
 
 def get_active():
-    if version_2_79_or_older():
-        return bpy.context.scene.objects.active
     return bpy.context.view_layer.objects.active
 
 
 def select(obj, sel=True):
     if sel:
         hide(obj, False)
-    if version_2_79_or_older():
-        obj.select = sel
-    else:
-        obj.select_set(sel)
+    obj.select_set(sel)
 
 
 def is_selected(obj):
-    if version_2_79_or_older():
-        return obj.select
     return obj.select_get()
 
 
 def hide(obj, val=True):
-    if hasattr(obj, 'hide'):
-        obj.hide = val
-    if not version_2_79_or_older():
-        obj.hide_set(val)
+    obj.hide_set(val)
 
 
 def is_hidden(obj):
-    if version_2_79_or_older():
-        return obj.hide
     return obj.hide_get()
 
 
@@ -250,7 +222,7 @@ def set_default_stage():
     """
 
     # Remove rigidbody collections, as they cause issues if they are not in the view_layer
-    if not version_2_79_or_older() and bpy.context.scene.remove_rigidbodies_joints:
+    if bpy.context.scene.remove_rigidbodies_joints:
         print('Collections:')
         for collection in bpy.data.collections:
             print(' ' + collection.name, collection.name.lower())
@@ -275,17 +247,11 @@ def set_default_stage():
     armature = get_armature()
     if armature:
         set_active(armature)
-        if version_2_79_or_older():
-            armature.layers[0] = True
 
     return armature
 
 
 def apply_modifier(mod, as_shapekey=False):
-    if bpy.app.version < (2, 90):
-        bpy.ops.object.modifier_apply(apply_as='SHAPE' if as_shapekey else 'DATA', modifier=mod.name)
-        return
-
     if as_shapekey:
         bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
     else:
@@ -790,17 +756,8 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
                     apply_modifier(mod)
 
         # Standardize UV maps name
-        if version_2_79_or_older():
-            if mesh.data.uv_textures:
-                mesh.data.uv_textures[0].name = 'UVMap'
-            for mat_slot in mesh.material_slots:
-                if mat_slot and mat_slot.material:
-                    for tex_slot in mat_slot.material.texture_slots:
-                        if tex_slot and tex_slot.texture and tex_slot.texture_coords == 'UV':
-                            tex_slot.uv_layer = 'UVMap'
-        else:
-            if mesh.data.uv_layers:
-                mesh.data.uv_layers[0].name = 'UVMap'
+        if mesh.data.uv_layers:
+            mesh.data.uv_layers[0].name = 'UVMap'
 
     # Get the name of the active mesh in order to check if it was deleted later
     active_mesh_name = get_active().name
@@ -1166,20 +1123,20 @@ def save_shapekey_order(mesh_name):
             return
 
     # Save order to custom data
-    # print('SAVE NEW ORDER')
+    print('SAVE NEW ORDER')
     custom_data['shape_key_order'] = shape_key_order
 
     # Save custom data in armature
     armature['CUSTOM'] = custom_data
 
-    # print(armature.get('CUSTOM').get('shape_key_order'))
+    print(armature.get('CUSTOM').get('shape_key_order'))
 
 
 def repair_shapekey_order(mesh_name):
     # Get current custom data
     armature = get_armature()
     custom_data = armature.get('CUSTOM')
-    if not custom_data:
+    if not custom_data or type(custom_data) is str:
         custom_data = {}
 
     # Extract shape keys from string
@@ -1742,8 +1699,6 @@ def has_shapekeys(mesh):
 
 
 def matmul(a, b):
-    if version_2_79_or_older():
-        return a * b
     return a @ b
 
 
@@ -2132,15 +2087,8 @@ def toggle_mmd_tabs(shutdown_plugin=False):
         mmd_util_tools.MMDMeshSorter,
         mmd_util_tools.MMDBoneOrder,
     ]
-    mmd_cls_shading = [
-        mmd_view_prop.MMDViewPanel,
-        mmd_view_prop.MMDSDEFPanel,
-    ]
 
-    if not version_2_79_or_older():
-        mmd_cls = mmd_cls + mmd_cls_shading
-
-    # If the plugin is shutting down, load the mmd_tools tabs before that, to avoid issues when unregistering mmd_tools
+    # If the plugin is shutting down, load the mmd_tools_local tabs before that, to avoid issues when unregistering mmd_tools_local
     if bpy.context.scene.show_mmd_tabs or shutdown_plugin:
         for cls in mmd_cls:
             try:
@@ -2376,64 +2324,52 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
             property_holder[property_name] = replacement_idx
             # print(f"Detected '{property_path}' enum in '{scene.name}' with an invalid value, it has been fixed automatically")
         except AttributeError:
-            # bpy.app.timers is 2.80+
-            # For older Blender versions, it is possible to use a Thread to run the task until it works, but this
-            # would result in EnumProperty update functions being called from a separate Thread which does not
-            # sound like a good idea. It also might not be safe in general to get a scene and update one if its
-            # properties from a separate Thread, e.g., what if the scene is deleted in the time between getting the
-            # scene and updating the property's value?
-            # Without the scheduled task on 2.79, if the index is out of bounds, the temporary duplicates will
-            # be added every time the items function is called, until the EnumProperty is updated or retrieved
-            # outside of UI drawing. This causes the temporary duplicates to be visible in the UI. Though, selecting
-            # any of the temporary duplicates poses no problem as it causes the property to be updated outside of UI
-            # drawing, thus fixing the out-of-bounds index and causing the temporary duplicates to disappear.
-            if not version_2_79_or_older():
-                # No modification is allowed when called as part of drawing UI, so we must schedule a task instead
-                # First check if a fix has not already been scheduled, otherwise around 4 or 5 tasks could get scheduled
-                # before the first one fixes the invalid choice
-                scene_name = scene.name
-                # _enum_choice_fix_scheduled is a global variable
-                scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
-                if property_path not in scheduled_property_set:
-                    replacement_identifier = replacement_choice[0]
+            # No modification is allowed when called as part of drawing UI, so we must schedule a task instead
+            # First check if a fix has not already been scheduled, otherwise around 4 or 5 tasks could get scheduled
+            # before the first one fixes the invalid choice
+            scene_name = scene.name
+            # _enum_choice_fix_scheduled is a global variable
+            scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
+            if property_path not in scheduled_property_set:
+                replacement_identifier = replacement_choice[0]
 
-                    scheduled_property_set.add(property_path)
+                scheduled_property_set.add(property_path)
 
-                    # Closure task to fix the property
-                    def fix_out_of_bounds_enum_choice_task():
-                        scene_by_name = bpy.data.scenes.get(scene_name)
-                        # It's unlikely, but it is possible that the scene could have been deleted or renamed by the
-                        # time the task executes. If it was renamed, another task would end up getting scheduled with
-                        # the new name, so no problems there.
-                        if scene_by_name:
-                            # False argument to not coerce into a Python object (the value of the property) and instead
-                            # return the prop itself
-                            prop = scene_by_name.path_resolve(property_path, False)
-                            # .id_data is the owner of the property, the scene in this case, and .data is the holder of
-                            # the property
-                            prop_holder = prop.data
-                            # Setting the index
-                            #   prop_holder[property_name] = replacement_idx
-                            # doesn't cause UI to update the list of items.
-                            # However, setting the property itself does, and since this is scheduled and called
-                            # separately, there's no issue of causing infinite recursion.
-                            # This will result in fix_invalid_enum_choices getting called again, but that will only fix
-                            # the index and not cause the UI to update.
-                            # Equivalent to: scene_by_name.property = replacement_identifier
-                            setattr(prop_holder, property_name, replacement_identifier)
-                            # print(f"Fixed '{property_path}' EnumProperty in '{scene_name}'")
-                        else:
-                            print("An EnumProperty fix was scheduled to set '{}.{}' to '{}', but the scene '{}' could not be found."
-                                  .format(scene_name, property_path, replacement_identifier, scene_name))
-                        scheduled_property_set.remove(property_path)
-                        # Returning None indicates that the timer should be removed after being executed; here for
-                        # clarity.
-                        return None
+                # Closure task to fix the property
+                def fix_out_of_bounds_enum_choice_task():
+                    scene_by_name = bpy.data.scenes.get(scene_name)
+                    # It's unlikely, but it is possible that the scene could have been deleted or renamed by the
+                    # time the task executes. If it was renamed, another task would end up getting scheduled with
+                    # the new name, so no problems there.
+                    if scene_by_name:
+                        # False argument to not coerce into a Python object (the value of the property) and instead
+                        # return the prop itself
+                        prop = scene_by_name.path_resolve(property_path, False)
+                        # .id_data is the owner of the property, the scene in this case, and .data is the holder of
+                        # the property
+                        prop_holder = prop.data
+                        # Setting the index
+                        #   prop_holder[property_name] = replacement_idx
+                        # doesn't cause UI to update the list of items.
+                        # However, setting the property itself does, and since this is scheduled and called
+                        # separately, there's no issue of causing infinite recursion.
+                        # This will result in fix_invalid_enum_choices getting called again, but that will only fix
+                        # the index and not cause the UI to update.
+                        # Equivalent to: scene_by_name.property = replacement_identifier
+                        setattr(prop_holder, property_name, replacement_identifier)
+                        # print(f"Fixed '{property_path}' EnumProperty in '{scene_name}'")
+                    else:
+                        print("An EnumProperty fix was scheduled to set '{}.{}' to '{}', but the scene '{}' could not be found."
+                              .format(scene_name, property_path, replacement_identifier, scene_name))
+                    scheduled_property_set.remove(property_path)
+                    # Returning None indicates that the timer should be removed after being executed; here for
+                    # clarity.
+                    return None
 
-                    # Schedule the task to immediately execute when possible (this will be after UI drawing has
-                    # finished)
-                    bpy.app.timers.register(fix_out_of_bounds_enum_choice_task)
-                    # print(f"Detected '{property_path}' enum in '{scene_name}' with an invalid value during UI drawing, a fix has been scheduled")
+                # Schedule the task to immediately execute when possible (this will be after UI drawing has
+                # finished)
+                bpy.app.timers.register(fix_out_of_bounds_enum_choice_task)
+                # print(f"Detected '{property_path}' enum in '{scene_name}' with an invalid value during UI drawing, a fix has been scheduled")
 
     return choices
 
@@ -2476,41 +2412,22 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True)
 
     return wrapped_items_func
 
+# Passing in context_override as a positional-only argument is deprecated as of Blender 3.2, replaced with
+# Context.temp_override
+def op_override(operator, context_override: dict[str, Any], context: Optional[bpy.types.Context] = None,
+                execution_context: Optional[str] = None,
+                undo: Optional[bool] = None, **operator_args) -> set[str]:
+    """Call an operator with a context override"""
+    args = []
+    if execution_context is not None:
+        args.append(execution_context)
+    if undo is not None:
+        args.append(undo)
 
-if bpy.app.version >= (3, 2):
-    # Passing in context_override as a positional-only argument is deprecated as of Blender 3.2, replaced with
-    # Context.temp_override
-    def op_override(operator, context_override: dict[str, Any], context: Optional[bpy.types.Context] = None,
-                    execution_context: Optional[str] = None,
-                    undo: Optional[bool] = None, **operator_args) -> set[str]:
-        """Call an operator with a context override"""
-        args = []
-        if execution_context is not None:
-            args.append(execution_context)
-        if undo is not None:
-            args.append(undo)
-
-        if context is None:
-            context = bpy.context
-        with context.temp_override(**context_override):
-            return operator(*args, **operator_args)
-else:
-    def op_override(operator, context_override: Dict[str, Any], context: Optional[bpy.types.Context] = None,
-                    execution_context: Optional[str] = None,
-                    undo: Optional[bool] = None, **operator_args) -> Set[str]:
-        """Call an operator with a context override"""
-        if context is not None:
-            context_base = context.copy()
-            context_base.update(context_override)
-            context_override = context_base
-        args = [context_override]
-        if execution_context is not None:
-            args.append(execution_context)
-        if undo is not None:
-            args.append(undo)
-
+    if context is None:
+        context = bpy.context
+    with context.temp_override(**context_override):
         return operator(*args, **operator_args)
-
 
 """ === THIS CODE COULD BE USEFUL === """
 

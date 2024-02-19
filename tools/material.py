@@ -25,25 +25,24 @@ class OneTexPerMatButton(bpy.types.Operator):
         # Common.unify_materials()
         # Common.add_principled_shader()
         # return {'FINISHED'}
-        if not Common.version_2_79_or_older():
-            self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
-            return {'CANCELLED'}
-            # TODO
+        self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
+        return {'CANCELLED'}
+        # TODO
 
-        saved_data = Common.SavedData()
-
-        Common.set_default_stage()
-
-        for mesh in Common.get_meshes_objects():
-            for mat_slot in mesh.material_slots:
-                for i, tex_slot in enumerate(mat_slot.material.texture_slots):
-                    if i > 0 and tex_slot:
-                        mat_slot.material.use_textures[i] = False
-
-        saved_data.load()
-
-        self.report({'INFO'}, t('OneTexPerMatButton.success'))
-        return{'FINISHED'}
+        # saved_data = Common.SavedData()
+        #
+        # Common.set_default_stage()
+        #
+        # for mesh in Common.get_meshes_objects():
+        #     for mat_slot in mesh.material_slots:
+        #         for i, tex_slot in enumerate(mat_slot.material.texture_slots):
+        #             if i > 0 and tex_slot:
+        #                 mat_slot.material.use_textures[i] = False
+        #
+        # saved_data.load()
+        #
+        # self.report({'INFO'}, t('OneTexPerMatButton.success'))
+        # return{'FINISHED'}
 
 
 @register_wrap
@@ -60,25 +59,24 @@ class OneTexPerMatOnlyButton(bpy.types.Operator):
         return len(Common.get_meshes_objects(check=False)) > 0
 
     def execute(self, context):
-        if not Common.version_2_79_or_older():
-            self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
-            return {'CANCELLED'}
-            # TODO
+        self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
+        return {'CANCELLED'}
+        # TODO
 
-        saved_data = Common.SavedData()
-
-        Common.set_default_stage()
-
-        for mesh in Common.get_meshes_objects():
-            for mat_slot in mesh.material_slots:
-                for i, tex_slot in enumerate(mat_slot.material.texture_slots):
-                    if i > 0 and tex_slot:
-                        tex_slot.texture = None
-
-        saved_data.load()
-
-        self.report({'INFO'}, t('OneTexPerXButton.success'))
-        return{'FINISHED'}
+        # saved_data = Common.SavedData()
+        #
+        # Common.set_default_stage()
+        #
+        # for mesh in Common.get_meshes_objects():
+        #     for mat_slot in mesh.material_slots:
+        #         for i, tex_slot in enumerate(mat_slot.material.texture_slots):
+        #             if i > 0 and tex_slot:
+        #                 tex_slot.texture = None
+        #
+        # saved_data.load()
+        #
+        # self.report({'INFO'}, t('OneTexPerXButton.success'))
+        # return{'FINISHED'}
 
 
 @register_wrap
@@ -95,31 +93,30 @@ class StandardizeTextures(bpy.types.Operator):
         return len(Common.get_meshes_objects(check=False)) > 0
 
     def execute(self, context):
-        if not Common.version_2_79_or_older():
-            self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
-            return {'CANCELLED'}
-            # TODO
+        self.report({'ERROR'}, t('ToolsMaterial.error.notCompatible'))
+        return {'CANCELLED'}
+        # TODO
 
-        saved_data = Common.SavedData()
-
-        Common.set_default_stage()
-
-        for mesh in Common.get_meshes_objects():
-            for mat_slot in mesh.material_slots:
-
-                mat_slot.material.transparency_method = 'Z_TRANSPARENCY'
-                mat_slot.material.alpha = 1
-
-                for tex_slot in mat_slot.material.texture_slots:
-                    if tex_slot:
-                        tex_slot.use_map_alpha = True
-                        tex_slot.use_map_color_diffuse = True
-                        tex_slot.blend_type = 'MULTIPLY'
-
-        saved_data.load()
-
-        self.report({'INFO'}, t('StandardizeTextures.success'))
-        return{'FINISHED'}
+        # saved_data = Common.SavedData()
+        #
+        # Common.set_default_stage()
+        #
+        # for mesh in Common.get_meshes_objects():
+        #     for mat_slot in mesh.material_slots:
+        #
+        #         mat_slot.material.transparency_method = 'Z_TRANSPARENCY'
+        #         mat_slot.material.alpha = 1
+        #
+        #         for tex_slot in mat_slot.material.texture_slots:
+        #             if tex_slot:
+        #                 tex_slot.use_map_alpha = True
+        #                 tex_slot.use_map_color_diffuse = True
+        #                 tex_slot.blend_type = 'MULTIPLY'
+        #
+        # saved_data.load()
+        #
+        # self.report({'INFO'}, t('StandardizeTextures.success'))
+        # return{'FINISHED'}
 
 
 @register_wrap
@@ -208,85 +205,63 @@ class CombineMaterialsButton(bpy.types.Operator):
         for ob in Common.get_meshes_objects():
             for index, mat_slot in enumerate(ob.material_slots):
                 hash_this = ''
+                ignore_nodes = ['Material Output', 'mmd_tex_uv', 'Cats Export Shader']
 
-                if Common.version_2_79_or_older():
-                    if mat_slot.material:
-                        for tex_index, mtex_slot in enumerate(mat_slot.material.texture_slots):
-                            if mtex_slot:
-                                if mat_slot.material.use_textures[tex_index]:
-                                    if hasattr(mtex_slot.texture, 'image') and bpy.data.materials[mat_slot.name].use_textures[tex_index] and mtex_slot.texture.image:
-                                        hash_this += mtex_slot.texture.image.filepath   # Filepaths makes the hash unique
-                        hash_this += str(mat_slot.material.alpha)           # Alpha setting on material makes the hash unique
-                        hash_this += str(mat_slot.material.diffuse_color)   # Diffuse color makes the hash unique
-                        # hash_this += str(mat_slot.material.specular_color)  # Specular color makes the hash unique  # Specular Color is no used by Unity
+                if mat_slot.material and mat_slot.material.node_tree:
+                    # print('MAT: ', mat_slot.material.name)
+                    nodes = mat_slot.material.node_tree.nodes
+                    for node in nodes:
 
-                    # print('---------------------------------------------------')
-                    # print(mat_slot.name, hash_this)
+                        # Skip certain known nodes
+                        if node.name in ignore_nodes or node.label in ignore_nodes:
+                            continue
 
-                    # Now create or add to the dict key that has this hash value
-                    if hash_this not in self.combined_tex:
-                        self.combined_tex[hash_this] = []
-                    self.combined_tex[hash_this].append({'mat': mat_slot.name, 'index': index})
-
-                else:
-                    hash_this = ''
-                    ignore_nodes = ['Material Output', 'mmd_tex_uv', 'Cats Export Shader']
-
-                    if mat_slot.material and mat_slot.material.node_tree:
-                        # print('MAT: ', mat_slot.material.name)
-                        nodes = mat_slot.material.node_tree.nodes
-                        for node in nodes:
-
-                            # Skip certain known nodes
-                            if node.name in ignore_nodes or node.label in ignore_nodes:
+                        # Add images to hash and skip toon and shpere textures
+                        if node.type == 'TEX_IMAGE':
+                            image = node.image
+                            if 'toon' in node.name or 'sphere' in node.name:
+                                nodes.remove(node)
                                 continue
-
-                            # Add images to hash and skip toon and shpere textures
-                            if node.type == 'TEX_IMAGE':
-                                image = node.image
-                                if 'toon' in node.name or 'sphere' in node.name:
-                                    nodes.remove(node)
-                                    continue
-                                if not image:
-                                    nodes.remove(node)
-                                    continue
-                                # print('  ', node.name)
-                                # print('    ', image.name)
-                                hash_this += node.name + image.name
+                            if not image:
+                                nodes.remove(node)
                                 continue
-                            # Skip nodes with no input
-                            if not node.inputs:
-                                continue
-
-                            # On MMD models only add diffuse and transparency to the hash
-                            if node.name == 'mmd_shader':
-                                # print('  ', node.name)
-                                # print('    ', node.inputs['Diffuse Color'].default_value[:])
-                                # print('    ', node.inputs['Alpha'].default_value)
-                                hash_this += node.name\
-                                             + str(node.inputs['Diffuse Color'].default_value[:])\
-                                             + str(node.inputs['Alpha'].default_value)
-                                continue
-
-                            # Add all other nodes to the hash
                             # print('  ', node.name)
-                            hash_this += node.name
-                            for input, value in node.inputs.items():
-                                if hasattr(value, 'default_value'):
-                                    try:
-                                        # print('    ', input, value.default_value[:])
-                                        hash_this += str(value.default_value[:])
-                                    except TypeError:
-                                        # print('    ', input, value.default_value)
-                                        hash_this += str(value.default_value)
-                                else:
-                                    # print('    ', input, 'name:', value.name)
-                                    hash_this += value.name
+                            # print('    ', image.name)
+                            hash_this += node.name + image.name
+                            continue
+                        # Skip nodes with no input
+                        if not node.inputs:
+                            continue
 
-                    # Now create or add to the dict key that has this hash value
-                    if hash_this not in self.combined_tex:
-                        self.combined_tex[hash_this] = []
-                    self.combined_tex[hash_this].append({'mat': mat_slot.name, 'index': index})
+                        # On MMD models only add diffuse and transparency to the hash
+                        if node.name == 'mmd_shader':
+                            # print('  ', node.name)
+                            # print('    ', node.inputs['Diffuse Color'].default_value[:])
+                            # print('    ', node.inputs['Alpha'].default_value)
+                            hash_this += node.name \
+                                         + str(node.inputs['Diffuse Color'].default_value[:]) \
+                                         + str(node.inputs['Alpha'].default_value)
+                            continue
+
+                        # Add all other nodes to the hash
+                        # print('  ', node.name)
+                        hash_this += node.name
+                        for input, value in node.inputs.items():
+                            if hasattr(value, 'default_value'):
+                                try:
+                                    # print('    ', input, value.default_value[:])
+                                    hash_this += str(value.default_value[:])
+                                except TypeError:
+                                    # print('    ', input, value.default_value)
+                                    hash_this += str(value.default_value)
+                            else:
+                                # print('    ', input, 'name:', value.name)
+                                hash_this += value.name
+
+                # Now create or add to the dict key that has this hash value
+                if hash_this not in self.combined_tex:
+                    self.combined_tex[hash_this] = []
+                self.combined_tex[hash_this].append({'mat': mat_slot.name, 'index': index})
 
         # for key, value in self.combined_tex.items():
         #     print(key)
@@ -417,7 +392,7 @@ class ConvertAllToPngButton(bpy.types.Operator):
 
         # Save the Color Management View Transform and change it to Standard, as any other would screw with the colors
         view_transform = bpy.context.scene.view_settings.view_transform
-        bpy.context.scene.view_settings.view_transform = 'Default' if Common.version_2_79_or_older() else 'Standard'
+        bpy.context.scene.view_settings.view_transform = 'Standard'
 
         # Save the image as a new png file
         scene = bpy.context.scene
