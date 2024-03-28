@@ -1926,7 +1926,7 @@ def add_principled_shader(mesh):
             node_principled = nodes.new(type='ShaderNodeBsdfPrincipled')
             node_principled.label = 'Cats Export Shader'
             node_principled.location = principled_shader_pos
-            node_principled.inputs['Specular'].default_value = 0
+            node_principled.inputs['Specular IOR Level'].default_value = 0
             node_principled.inputs['Roughness'].default_value = 0
             node_principled.inputs['Sheen Tint'].default_value = 0
             node_principled.inputs['Clearcoat Roughness'].default_value = 0
