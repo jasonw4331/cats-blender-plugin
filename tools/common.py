@@ -1928,8 +1928,8 @@ def add_principled_shader(mesh):
             node_principled.location = principled_shader_pos
             node_principled.inputs['Specular IOR Level'].default_value = 0
             node_principled.inputs['Roughness'].default_value = 0
-            node_principled.inputs['Sheen Tint'].default_value = 0
-            node_principled.inputs['Clearcoat Roughness'].default_value = 0
+            node_principled.inputs['Sheen Tint'].default_value = (0, 0, 0, 0)
+            node_principled.inputs['Coat Roughness'].default_value = 0
             node_principled.inputs['IOR'].default_value = 0
 
             # Create Output node for correct image exports
