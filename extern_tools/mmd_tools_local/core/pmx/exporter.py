@@ -978,17 +978,9 @@ class __PmxExporter:
         custom_normals = None
         if hasattr(mesh, "has_custom_normals"):
             logging.debug(" - Calculating normals split...")
-            mesh.calc_normals_split()
             custom_normals = [(matrix @ l.normal).normalized() for l in mesh.loops]
-            mesh.free_normals_split()
-        elif mesh.use_auto_smooth:
-            logging.debug(" - Calculating normals split (angle:%f)...", mesh.auto_smooth_angle)
-            mesh.calc_normals_split(mesh.auto_smooth_angle)
-            custom_normals = [(matrix @ l.normal).normalized() for l in mesh.loops]
-            mesh.free_normals_split()
         else:
             logging.debug(" - Calculating normals...")
-            mesh.calc_normals()
             custom_normals = []
             for f in mesh.polygons:
                 if f.use_smooth:
